@@ -36,11 +36,9 @@ final class MemoryAdapter implements CacheItemPoolInterface
 
         if (array_key_exists($key, $this->items)) {
             unset($this->items[$key]);
-
-            return true;
         }
 
-        return false;
+        return true;
     }
 
     /**

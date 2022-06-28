@@ -8,7 +8,6 @@ use Psr\Cache\CacheItemInterface;
 use Psr\Cache\CacheItemPoolInterface;
 use Thingston\Cache\Exception\InvalidArgumentException;
 use Thingston\Settings\SettingsInterface;
-use Symfony\Contracts\Cache\CacheInterface as SymfonyCacheInterface;
 
 class CacheManager implements CacheManagerInterface
 {
