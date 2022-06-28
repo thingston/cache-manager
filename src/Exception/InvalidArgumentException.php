@@ -6,6 +6,11 @@ namespace Thingston\Cache\Exception;
 
 class InvalidArgumentException extends \InvalidArgumentException implements CacheExceptionInterface
 {
+    public static function forInvalidKey(): self
+    {
+        return new self('Cache item key must be a non-empty string.');
+    }
+
     public static function forInvalidName(string $name): self
     {
         return new self(sprintf('Invalid pool name "%s",', $name));

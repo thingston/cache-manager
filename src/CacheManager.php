@@ -8,6 +8,7 @@ use Psr\Cache\CacheItemInterface;
 use Psr\Cache\CacheItemPoolInterface;
 use Thingston\Cache\Exception\InvalidArgumentException;
 use Thingston\Settings\SettingsInterface;
+use Symfony\Contracts\Cache\CacheInterface as SymfonyCacheInterface;
 
 class CacheManager implements CacheManagerInterface
 {
@@ -38,6 +39,10 @@ class CacheManager implements CacheManagerInterface
         }
 
         $config = $this->settings->get($name);
+
+        if (is_string($config)) {
+            return $this->getItemPool($config);
+        }
 
         if (false === is_array($config) && false === $config instanceof SettingsInterface) {
             throw InvalidArgumentException::forInvalidConfig($name);

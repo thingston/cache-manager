@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Thingston\Cache;
 
-use Symfony\Component\Cache\Adapter\ArrayAdapter;
+use Thingston\Cache\Adapter\MemoryAdapter;
 use Thingston\Settings\AbstractSettings;
 
 final class CacheSettings extends AbstractSettings
@@ -16,12 +16,9 @@ final class CacheSettings extends AbstractSettings
     public function __construct()
     {
         parent::__construct([
-            self::DEFAULT => 'array',
-            'array' => [
-                self::ADAPTER => ArrayAdapter::class,
-                self::ARGUMENTS => [
-                    'defaultLifetime' => 0,
-                ],
+            self::DEFAULT => 'memory',
+            'memory' => [
+                self::ADAPTER => MemoryAdapter::class,
             ],
         ]);
     }
