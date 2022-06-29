@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Thingston\Cache\Exception;
 
+use Psr\Cache\CacheItemInterface;
+
 class InvalidArgumentException extends \InvalidArgumentException implements CacheExceptionInterface
 {
     public static function forInvalidKey(): self
@@ -29,5 +31,24 @@ class InvalidArgumentException extends \InvalidArgumentException implements Cach
     public static function forInvalidArguments(string $name): self
     {
         return new self(sprintf('Invalid arguments type for pool "%s",', $name));
+    }
+
+    public static function forInvalidDirectory(string $directory): self
+    {
+        return new self(sprintf('Argument "%s" isn\'t a valid directory name,', $directory));
+    }
+
+    public static function forInvalidFile(string $file): self
+    {
+        return new self(sprintf('Argument "%s" isn\'t a writable file,', $file));
+    }
+
+    public static function forInvalidItem(string $key): self
+    {
+        return new self(sprintf(
+            'Stored value for key "%s" isn\'t an instance of "%s",',
+            $key,
+            CacheItemInterface::class
+        ));
     }
 }
