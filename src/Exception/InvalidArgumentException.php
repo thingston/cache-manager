@@ -37,18 +37,4 @@ class InvalidArgumentException extends \InvalidArgumentException implements Cach
     {
         return new self(sprintf('Argument "%s" isn\'t a valid directory name,', $directory));
     }
-
-    public static function forInvalidFile(string $file): self
-    {
-        return new self(sprintf('Argument "%s" isn\'t a writable file,', $file));
-    }
-
-    public static function forInvalidItem(string $key): self
-    {
-        return new self(sprintf(
-            'Stored value for key "%s" isn\'t an instance of "%s",',
-            $key,
-            CacheItemInterface::class
-        ));
-    }
 }

@@ -10,3 +10,4 @@ composer.phar
 /phpstan.neon
 /coverage.xml
 /coverage/
+/cache/

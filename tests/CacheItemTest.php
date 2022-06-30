@@ -38,14 +38,12 @@ final class CacheItemTest extends TestCase
     public function testExpiresAfter(): void
     {
         $item = new CacheItem('foo', 'bar');
-        sleep(1);
         $this->assertFalse($item->isHit());
 
         $item->expiresAfter(new DateInterval('PT1H'));
         $this->assertTrue($item->isHit());
 
         $item->expiresAfter(null);
-        sleep(1);
         $this->assertFalse($item->isHit());
     }
 

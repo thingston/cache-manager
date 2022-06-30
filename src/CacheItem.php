@@ -28,8 +28,8 @@ final class CacheItem implements CacheItemInterface
     public function expiresAfter(int|DateInterval|null $time): static
     {
         if (is_int($time)) {
-            $this->expiresAt = new DateTime('@' . (microtime(true) + $time));
-        } elseif ($time instanceof \DateInterval) {
+            $this->expiresAt = new DateTime('@' . (time() + $time));
+        } elseif ($time instanceof DateInterval) {
             $this->expiresAt = (new DateTime())->add($time);
         } else {
             $this->expiresAt = new DateTime();
@@ -61,7 +61,7 @@ final class CacheItem implements CacheItemInterface
 
     public function isHit(): bool
     {
-        return new DateTime() < $this->expiresAt;
+        return (new DateTime())->format('Uu') < $this->expiresAt->format('Uu');
     }
 
     public function set(mixed $value): static

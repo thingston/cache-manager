@@ -5,23 +5,21 @@ declare(strict_types=1);
 namespace Thingston\Cache\Adapter;
 
 use Psr\Cache\CacheItemInterface;
-use Psr\Cache\CacheItemPoolInterface;
-use Thingston\Cache\CacheItem;
 use Thingston\Cache\Exception\InvalidArgumentException;
+use Throwable;
 
-final class FileAdapter implements CacheItemPoolInterface
+final class FileAdapter extends AbstractAdapter
 {
     private string $directory;
-
-    /**
-     * @var array<CacheItemInterface>
-     */
-    private array $deferred = [];
 
     public function __construct(?string $directory = null)
     {
         if (null === $directory) {
             $directory = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'thingston-cache';
+        }
+
+        if (DIRECTORY_SEPARATOR !== substr($directory, 0, 1)) {
+            $directory = getcwd() . DIRECTORY_SEPARATOR . $directory;
         }
 
         if (false === is_dir($directory)) {
@@ -32,13 +30,24 @@ final class FileAdapter implements CacheItemPoolInterface
             throw InvalidArgumentException::forInvalidDirectory($directory);
         }
 
-        $this->directory = $directory;
+        $this->directory = realpath($directory) ?: $directory;
+    }
+
+    public function clear(): bool
+    {
+        $this->emptyDirectory($this->directory);
+
+        return true;
     }
 
     private function createDirectory(string $directory): void
     {
-        if (false === mkdir($directory, 0777, true)) {
-            throw InvalidArgumentException::forInvalidDirectory($directory);
+        try {
+            if (false === mkdir($directory, 0777, true)) {
+                throw InvalidArgumentException::forInvalidDirectory($directory);
+            }
+        } catch (Throwable $e) {
+            throw new InvalidArgumentException(sprintf('Unable to create directory "%s".', $directory), 0, $e);
         }
     }
 
@@ -57,11 +66,6 @@ final class FileAdapter implements CacheItemPoolInterface
 
             if (is_dir($path)) {
                 $this->emptyDirectory($path, true);
-
-                if ($remove) {
-                    rmdir($path);
-                }
-
                 continue;
             }
 
@@ -69,128 +73,69 @@ final class FileAdapter implements CacheItemPoolInterface
         }
 
         $dir->close();
+
+        if ($remove) {
+            rmdir($directory);
+        }
     }
 
     private function removeFile(string $file): void
     {
-        if (false === unlink($file)) {
-            throw InvalidArgumentException::forInvalidFile($file);
-        }
-    }
-
-    public function clear(): bool
-    {
-        $this->emptyDirectory($this->directory);
-
-        return true;
-    }
-
-    public function commit(): bool
-    {
-        while (null !== $item = array_shift($this->deferred)) {
-            $this->save($item);
-        }
-
-        return true;
+        unlink($file);
     }
 
     private function createFileName(string $key): string
     {
-        if ('' === $key) {
-            throw InvalidArgumentException::forInvalidKey();
-        }
-
         return $this->directory . DIRECTORY_SEPARATOR . hash('crc32', $key);
     }
 
-    public function deleteItem(string $key): bool
-    {
-        $file = $this->createFileName($key);
-
-        if (file_exists($file)) {
-            $this->removeFile($file);
-        }
-
-        return true;
-    }
-
-    /**
-     * @param array<string> $keys
-     * @return bool
-     */
-    public function deleteItems(array $keys): bool
-    {
-        foreach ($keys as $key) {
-            $this->deleteItem($key);
-        }
-
-        return true;
-    }
-
-    public function getItem(string $key): CacheItemInterface
+    protected function fetchItem(string $key): ?CacheItemInterface
     {
         $file = $this->createFileName($key);
 
         if (false === file_exists($file) || false === $contents = file_get_contents($file)) {
-            return new CacheItem($key, null);
+            return null;
         }
 
-        $item = unserialize($contents);
+        try {
+            $item = unserialize($contents);
+        } catch (Throwable $e) {
+            throw new InvalidArgumentException(sprintf('Invalid content for key "%s".', $key), 0, $e);
+        }
 
         if (false === $item instanceof CacheItemInterface) {
-            $this->deleteItem($key);
-            throw InvalidArgumentException::forInvalidItem($key);
+            $this->removeFile($file);
+
+            return null;
         }
 
         return $item;
     }
 
-    /**
-     * @param array<string> $keys
-     * @return iterable<CacheItemInterface>
-     */
-    public function getItems(array $keys = []): iterable
-    {
-        $items = [];
-
-        foreach ($keys as $key) {
-            $items[] = $this->getItem($key);
-        }
-
-        return $items;
-    }
-
-    public function hasItem(string $key): bool
+    protected function removeItem(string $key): bool
     {
         $file = $this->createFileName($key);
 
-        if (false === file_exists($file)) {
+        if (false === file_exists($file) || false === is_writable($file)) {
             return false;
         }
 
-        if (false === $this->getItem($key)->isHit()) {
-            $this->deleteItem($key);
-
-            return false;
-        }
+        $this->removeFile($file);
 
         return true;
     }
 
-    public function save(CacheItemInterface $item): bool
+    protected function saveItem(CacheItemInterface $item): bool
     {
-        if (false === $item->isHit()) {
-            return false;
-        }
-
         $file = $this->createFileName($item->getKey());
 
-        return (bool) file_put_contents($file, serialize($item));
-    }
-
-    public function saveDeferred(CacheItemInterface $item): bool
-    {
-        $this->deferred[] = $item;
+        try {
+            if (false === file_put_contents($file, serialize($item))) {
+                return false;
+            }
+        } catch (Throwable $e) {
+            return false;
+        }
 
         return true;
     }
