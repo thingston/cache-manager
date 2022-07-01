@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Thingston\Cache\Adapter;
 
+use DateInterval;
 use Psr\Cache\CacheItemInterface;
-use Psr\Cache\CacheItemPoolInterface;
 use Thingston\Cache\CacheItem;
 use Thingston\Cache\Exception\InvalidArgumentException;
 
-abstract class AbstractAdapter implements CacheItemPoolInterface
+abstract class AbstractAdapter implements CacheAdapterInterface
 {
     /**
      * @var array<CacheItemInterface>
@@ -108,6 +108,70 @@ abstract class AbstractAdapter implements CacheItemPoolInterface
         }
 
         return true;
+    }
+
+    public function get(string $key, mixed $default = null): mixed
+    {
+        if (false === $this->hasItem($key)) {
+            return $default;
+        }
+
+        return $this->getItem($key)->get();
+    }
+
+    public function set(string $key, mixed $value, null|int|DateInterval $ttl = null): bool
+    {
+        $item = new CacheItem($key, $value);
+        $item->expiresAfter($ttl);
+
+        return $this->save($item);
+    }
+
+    public function delete(string $key): bool
+    {
+        return $this->deleteItem($key);
+    }
+
+    /**
+     * @param iterable<string> $keys
+     * @param mixed $default
+     * @return iterable<string, mixed>
+     */
+    public function getMultiple(iterable $keys, mixed $default = null): iterable
+    {
+        $values = [];
+
+        foreach ($this->getItems((array) $keys) as $item) {
+            $values[$item->getKey()] = $item->isHit() ? $item->get() : $default;
+        }
+
+        return $values;
+    }
+
+    /**
+     * @param iterable<string, mixed> $values
+     * @param null|int|DateInterval $ttl
+     * @return bool
+     */
+    public function setMultiple(iterable $values, null|int|\DateInterval $ttl = null): bool
+    {
+        foreach ($values as $key => $value) {
+            if (false === $this->set($key, $value, $ttl)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    public function deleteMultiple(iterable $keys): bool
+    {
+        return $this->deleteItems((array) $keys);
+    }
+
+    public function has(string $key): bool
+    {
+        return $this->hasItem($key);
     }
 
     protected function assertKey(string $key): void

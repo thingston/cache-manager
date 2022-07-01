@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Thingston\Cache\Exception;
 
-use Psr\Cache\CacheItemInterface;
-
 class InvalidArgumentException extends \InvalidArgumentException implements CacheExceptionInterface
 {
     public static function forInvalidKey(): self

@@ -4,18 +4,19 @@ declare(strict_types=1);
 
 namespace Thingston\Tests\Cache\Adapter;
 
-use Psr\Cache\CacheItemPoolInterface;
+use Thingston\Cache\Adapter\CacheAdapterInterface;
 use Thingston\Cache\CacheItem;
 use Thingston\Cache\Exception\InvalidArgumentException;
 
 trait AdapterTestTrait
 {
-    abstract protected function createAdapter(): CacheItemPoolInterface;
+    abstract protected function createAdapter(): CacheAdapterInterface;
     abstract public function expectException(string $exception): void;
     abstract public static function assertEquals($expected, $actual, string $message = ''): void;
     abstract public static function assertTrue($conditionm, string $message = ''): void;
     abstract public static function assertFalse($conditionm, string $message = ''): void;
     abstract public static function assertCount(int $expectedCount, $haystack, string $message = ''): void;
+    abstract public static function assertSame($expected, $actual, string $message = '');
 
     public function testInvalidKey(): void
     {
@@ -137,5 +138,45 @@ trait AdapterTestTrait
         $this->assertFalse($adapter->hasItem('foo'));
         $this->assertFalse($adapter->hasItem('bar'));
         $this->assertFalse($adapter->hasItem('baz'));
+    }
+
+    public function testGet(): void
+    {
+        $adapter = $this->createAdapter();
+        $adapter->save(new CacheItem('foo', 'bar', 60));
+
+        $this->assertSame('bar', $adapter->get('foo', 'default'));
+        $this->assertSame('default', $adapter->get('bar', 'default'));
+    }
+
+    public function testSetDelete(): void
+    {
+        $adapter = $this->createAdapter();
+
+        $this->assertTrue($adapter->set('foo', 'bar', 60));
+        $this->assertTrue($adapter->has('foo'));
+        $this->assertTrue($adapter->delete('foo'));
+        $this->assertFalse($adapter->set('foo', 'bar'));
+        $this->assertFalse($adapter->delete('foo'));
+        $this->assertFalse($adapter->has('foo'));
+    }
+
+    public function testSetGetDeleteMultiple(): void
+    {
+        $adapter = $this->createAdapter();
+
+        $values = [
+            'foo' => 'bar',
+            'bar' => 'baz',
+            'baz' => 'bee',
+        ];
+
+        $this->assertTrue($adapter->setMultiple($values, 60));
+        $this->assertSame($values, $adapter->getMultiple(array_keys($values)));
+        $this->assertTrue($adapter->deleteMultiple(array_keys($values)));
+
+        $this->assertFalse($adapter->setMultiple(['foo' => 'bar']));
+        $this->assertSame(['foo' => null], $adapter->getMultiple(['foo']));
+        $this->assertFalse($adapter->deleteMultiple(['foo']));
     }
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Thingston\Cache;
 
+use Thingston\Cache\Adapter\FileAdapter;
 use Thingston\Cache\Adapter\MemoryAdapter;
 use Thingston\Settings\AbstractSettings;
 
@@ -19,6 +20,9 @@ final class CacheSettings extends AbstractSettings
             self::DEFAULT => 'memory',
             'memory' => [
                 self::ADAPTER => MemoryAdapter::class,
+            ],
+            'file' => [
+                self::ADAPTER => FileAdapter::class,
             ],
         ]);
     }

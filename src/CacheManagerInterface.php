@@ -4,10 +4,9 @@ declare(strict_types=1);
 
 namespace Thingston\Cache;
 
-use Psr\Cache\CacheItemPoolInterface;
-use Psr\SimpleCache\CacheInterface;
+use Thingston\Cache\Adapter\CacheAdapterInterface;
 
-interface CacheManagerInterface extends CacheItemPoolInterface
+interface CacheManagerInterface extends CacheAdapterInterface
 {
-    public function getItemPool(?string $name = null): CacheItemPoolInterface;
+    public function getCache(?string $name = null): CacheAdapterInterface;
 }

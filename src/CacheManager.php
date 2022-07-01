@@ -4,15 +4,17 @@ declare(strict_types=1);
 
 namespace Thingston\Cache;
 
+use DateInterval;
 use Psr\Cache\CacheItemInterface;
 use Psr\Cache\CacheItemPoolInterface;
+use Thingston\Cache\Adapter\CacheAdapterInterface;
 use Thingston\Cache\Exception\InvalidArgumentException;
 use Thingston\Settings\SettingsInterface;
 
 class CacheManager implements CacheManagerInterface
 {
     /**
-     * @var array<string, CacheItemPoolInterface>
+     * @var array<string, CacheAdapterInterface>
      */
     private array $pools = [];
 
@@ -23,7 +25,7 @@ class CacheManager implements CacheManagerInterface
         $this->settings = $settings ?? new CacheSettings();
     }
 
-    public function getItemPool(?string $name = null): CacheItemPoolInterface
+    public function getCache(?string $name = null): CacheAdapterInterface
     {
         if (null === $name) {
             $name = CacheSettings::DEFAULT;
@@ -40,7 +42,7 @@ class CacheManager implements CacheManagerInterface
         $config = $this->settings->get($name);
 
         if (is_string($config)) {
-            return $this->getItemPool($config);
+            return $this->getCache($config);
         }
 
         if (false === is_array($config) && false === $config instanceof SettingsInterface) {
@@ -54,7 +56,7 @@ class CacheManager implements CacheManagerInterface
         $adapter = $config[CacheSettings::ADAPTER] ?? null;
         $arguments = $config[CacheSettings::ARGUMENTS] ?? [];
 
-        if (false === is_string($adapter) || false === is_a($adapter, CacheItemPoolInterface::class, true)) {
+        if (false === is_string($adapter) || false === is_a($adapter, CacheAdapterInterface::class, true)) {
             throw InvalidArgumentException::forInvalidAdapter($name);
         }
 
@@ -67,27 +69,27 @@ class CacheManager implements CacheManagerInterface
 
     public function clear(): bool
     {
-        return $this->getItemPool()->clear();
+        return $this->getCache()->clear();
     }
 
     public function commit(): bool
     {
-        return $this->getItemPool()->commit();
+        return $this->getCache()->commit();
     }
 
     public function deleteItem(string $key): bool
     {
-        return $this->getItemPool()->deleteItem($key);
+        return $this->getCache()->deleteItem($key);
     }
 
     public function deleteItems(array $keys): bool
     {
-        return $this->getItemPool()->deleteItems($keys);
+        return $this->getCache()->deleteItems($keys);
     }
 
     public function getItem(string $key): CacheItemInterface
     {
-        return $this->getItemPool()->getItem($key);
+        return $this->getCache()->getItem($key);
     }
 
     /**
@@ -96,21 +98,66 @@ class CacheManager implements CacheManagerInterface
      */
     public function getItems(array $keys = []): iterable
     {
-        return $this->getItemPool()->getItems($keys);
+        return $this->getCache()->getItems($keys);
     }
 
     public function hasItem(string $key): bool
     {
-        return $this->getItemPool()->hasItem($key);
+        return $this->getCache()->hasItem($key);
     }
 
     public function save(CacheItemInterface $item): bool
     {
-        return $this->getItemPool()->save($item);
+        return $this->getCache()->save($item);
     }
 
     public function saveDeferred(CacheItemInterface $item): bool
     {
-        return $this->getItemPool()->saveDeferred($item);
+        return $this->getCache()->saveDeferred($item);
+    }
+
+    public function get(string $key, mixed $default = null): mixed
+    {
+        return $this->getCache()->get($key, $default);
+    }
+
+    public function set(string $key, mixed $value, null|int|DateInterval $ttl = null): bool
+    {
+        return $this->getCache()->set($key, $value, $ttl);
+    }
+
+    public function delete(string $key): bool
+    {
+        return $this->getCache()->delete($key);
+    }
+
+    /**
+     * @param iterable<string> $keys
+     * @param mixed $default
+     * @return iterable<mixed>
+     */
+    public function getMultiple(iterable $keys, mixed $default = null): iterable
+    {
+        return $this->getCache()->getMultiple($keys, $default);
+    }
+
+    /**
+     * @param iterable<string, mixed> $values
+     * @param null|int|DateInterval $ttl
+     * @return bool
+     */
+    public function setMultiple(iterable $values, null|int|DateInterval $ttl = null): bool
+    {
+        return $this->getCache()->setMultiple($values, $ttl);
+    }
+
+    public function deleteMultiple(iterable $keys): bool
+    {
+        return $this->getCache()->deleteMultiple($keys);
+    }
+
+    public function has(string $key): bool
+    {
+        return $this->getCache()->has($key);
     }
 }

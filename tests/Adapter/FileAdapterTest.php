@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Thingston\Tests\Cache\Adapter;
 
 use PHPUnit\Framework\TestCase;
-use Psr\Cache\CacheItemPoolInterface;
+use Thingston\Cache\Adapter\CacheAdapterInterface;
 use Thingston\Cache\Adapter\FileAdapter;
 use Thingston\Cache\CacheItem;
 use Thingston\Cache\Exception\InvalidArgumentException;
@@ -14,7 +14,7 @@ final class FileAdapterTest extends TestCase
 {
     use AdapterTestTrait;
 
-    protected function createAdapter(): CacheItemPoolInterface
+    protected function createAdapter(): CacheAdapterInterface
     {
         return new FileAdapter(sys_get_temp_dir() . DIRECTORY_SEPARATOR . uniqid());
     }
