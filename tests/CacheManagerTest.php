@@ -29,6 +29,7 @@ final class CacheManagerTest extends TestCase
 
         $this->assertInstanceOf(CacheAdapterInterface::class, $manager->getCache('default'));
         $this->assertInstanceOf(CacheAdapterInterface::class, $manager->getCache('file'));
+        $this->assertInstanceOf(CacheAdapterInterface::class, $manager->getCache('dbal'));
     }
 
     public function testInvalidPoolName(): void
