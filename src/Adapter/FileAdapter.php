@@ -97,19 +97,7 @@ final class FileAdapter extends AbstractAdapter
             return null;
         }
 
-        try {
-            $item = unserialize($contents);
-        } catch (Throwable $e) {
-            throw new InvalidArgumentException(sprintf('Invalid content for key "%s".', $key), 0, $e);
-        }
-
-        if (false === $item instanceof CacheItemInterface) {
-            $this->removeFile($file);
-
-            return null;
-        }
-
-        return $item;
+        return $this->unserializeItem($key, $contents);
     }
 
     protected function removeItem(string $key): bool

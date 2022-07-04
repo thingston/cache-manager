@@ -8,6 +8,7 @@ use DateInterval;
 use Psr\Cache\CacheItemInterface;
 use Thingston\Cache\CacheItem;
 use Thingston\Cache\Exception\InvalidArgumentException;
+use Throwable;
 
 abstract class AbstractAdapter implements CacheAdapterInterface
 {
@@ -179,5 +180,22 @@ abstract class AbstractAdapter implements CacheAdapterInterface
         if ('' === trim($key)) {
             throw InvalidArgumentException::forInvalidKey();
         }
+    }
+
+    protected function unserializeItem(string $key, string $contents): ?CacheItemInterface
+    {
+        try {
+            $item = unserialize($contents);
+        } catch (Throwable $e) {
+            throw new InvalidArgumentException(sprintf('Invalid content for key "%s".', $key), 0, $e);
+        }
+
+        if (false === $item instanceof CacheItemInterface) {
+            $this->deleteItem($key);
+
+            return null;
+        }
+
+        return $item;
     }
 }
